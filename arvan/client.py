@@ -10,7 +10,7 @@ def api_key_validator(api_key, region="ir-thr-at1"):
     if len_api_key == 36:
         key = api_key
     elif len_api_key == 43:
-        key = api_key.spilit(" ")[1]
+        key = api_key.split(" ")[1]
     else:
         return False
     res = requests.get("%s/%s/servers" % (base_url, region), headers={"Authorization": "Apikey %s" % key})
