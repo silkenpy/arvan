@@ -67,12 +67,13 @@ class Client:
             region = self.region
 
         res = requests.get("%s/%s/servers" % (base_url, region), headers={"Authorization": "Apikey %s" % self.api_key})
+        print(res.content)
         if res.status_code == 200:
             result = {}
             for n in json.loads(res.content)['data']:
                 result[n["name"]] = {}
                 result[n["name"]]["id"] = n["id"]
-                result[n["name"]]["id"] = n["id"]
+                result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
                 result[n["name"]]["status"] = n["status"]
 
             self.all_servers[region] = result
@@ -86,6 +87,8 @@ class Client:
 
         res = requests.get("%s/%s/images?type=%s" % (base_url, region, img_type),
                            headers={"Authorization": "Apikey %s" % self.api_key})
+        print(res.status_code)
+        print(res.content)
         if res.status_code == 200:
             result = {}
             for n in json.loads(res.content)['data']:
