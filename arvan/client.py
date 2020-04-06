@@ -75,7 +75,7 @@ class Client:
                 result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
                 result[n["name"]]["status"] = n["status"]
                 result[n["name"]]["plan"] = {"id": n["flavor"]["id"], "disk": n["flavor"]["disk"],
-                                             "memory": n["flavor"]["ram"],"cpu": n["flavor"]["vcpus"]}
+                                             "memory": n["flavor"]["ram"], "cpu": n["flavor"]["vcpus"]}
 
             self.all_servers[region] = result
             return self.all_servers[region]
@@ -198,21 +198,25 @@ class Client:
             return True
         return False
 
-    def delete_cluster(self, vm_name=None, region=""):
+    def delete_cluster(self, vm_name, region=""):
+        result = True
         if not region:
             region = self.region
         self.get_region_servers(region)
         for name in self.all_servers[region]:
-            if not vm_name and name.startswith(vm_name + "-"):
-                self.delete(region, self.all_servers[region][name]["id"])
+            if name.startswith(vm_name + "-"):
+                result *= self.delete(self.all_servers[region][name]["id"], region)
+            else:
+                result = False
+        return result
 
-    def delete_list(self, vm_list=None, region=""):
-        if vm_list is None:
-            vm_list = []
+    def delete_list(self, vm_list, region=""):
+        result = True
         if not region:
             region = self.region
         for vm in vm_list:
-            self.delete(region, vm)
+            result *= self.delete(vm, region)
+        return result
 
     def power_off(self, vm_id="", region=""):
         if not region:
@@ -223,23 +227,23 @@ class Client:
             return True
         return False
 
-    def power_off_cluster(self, vm_name=None, region=""):
+    def power_off_cluster(self, vm_name, region=""):
+        result = True
         if not region:
             region = self.region
         self.get_region_servers(region)
         for name in self.all_servers[region]:
-            if not vm_name and name.startswith(vm_name + "-"):
-                self.power_off(region, self.all_servers[region][name]["id"])
+            if name.startswith(vm_name + "-"):
+                result *= self.power_off(self.all_servers[region][name]["id"], region)
+        return result
 
-    def power_off_list(self, vm_list=None, region=""):
+    def power_off_list(self, vm_list, region=""):
         result = True
-        if vm_list is None:
-            return False
         if not region:
             region = self.region
         for vm in vm_list:
-            result *= self.power_off(region, vm)
-        result
+            result *= self.power_off(vm, region)
+        return result
 
     def power_on(self, vm_id="", region=""):
         if not region:
@@ -250,22 +254,20 @@ class Client:
             return True
         return False
 
-    def power_on_cluster(self, vm_name=None, region=""):
+    def power_on_cluster(self, vm_name, region=""):
         result = True
         if not region:
             region = self.region
         self.get_region_servers(region)
         for name in self.all_servers[region]:
-            if not vm_name and name.startswith(vm_name + "-"):
-                result *= self.power_on(region, self.all_servers[region][name]["id"])
+            if name.startswith(vm_name + "-"):
+                result *= self.power_on(self.all_servers[region][name]["id"], region)
         return result
 
-    def power_on_list(self, vm_list=None, region=""):
+    def power_on_list(self, vm_list, region=""):
         result = True
-        if vm_list is None:
-            return False
         if not region:
             region = self.region
         for vm in vm_list:
-            result *= self.power_on(region, vm)
+            result *= self.power_on(vm, region)
         return result
