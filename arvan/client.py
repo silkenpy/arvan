@@ -67,7 +67,6 @@ class Client:
             region = self.region
 
         res = requests.get("%s/%s/servers" % (base_url, region), headers={"Authorization": "Apikey %s" % self.api_key})
-        print(res.content)
         if res.status_code == 200:
             result = {}
             for n in json.loads(res.content)['data']:
@@ -75,6 +74,8 @@ class Client:
                 result[n["name"]]["id"] = n["id"]
                 result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
                 result[n["name"]]["status"] = n["status"]
+                result[n["name"]]["plan"] = {"id": n["flavor"]["id"], "disk": n["flavor"]["disk"],
+                                             "memory": n["flavor"]["ram"],"cpu": n["flavor"]["vcpus"]}
 
             self.all_servers[region] = result
             return self.all_servers[region]
@@ -87,8 +88,6 @@ class Client:
 
         res = requests.get("%s/%s/images?type=%s" % (base_url, region, img_type),
                            headers={"Authorization": "Apikey %s" % self.api_key})
-        print(res.status_code)
-        print(res.content)
         if res.status_code == 200:
             result = {}
             for n in json.loads(res.content)['data']:
@@ -123,8 +122,9 @@ class Client:
         res = requests.get("%s/%s/sizes" % (base_url, region), headers={"Authorization": "Apikey %s" % self.api_key})
         if res.status_code == 200:
             result = {}
-            for n in json.loads(res.content)['data']:
-                result[n["name"]] = n["order"]
+            for plan in json.loads(res.content)['data']:
+                result[plan["name"]] = {"order": plan["order"], "memory": plan["memory"], "cpu": plan["cpu_count"],
+                                        "disk": plan["disk"]}
             self.all_sizes[region] = result
             return self.all_sizes
         else:
@@ -170,7 +170,7 @@ class Client:
         if not network:
             network = self.all_networks[region][0]
         if not flavor:
-            flavor = self.all_sizes[region]['standard1']
+            flavor = self.all_sizes[region]['standard1']['order']
         if not security_group:
             security_group = self.all_security_group[region]['default']
 
@@ -189,7 +189,7 @@ class Client:
         else:
             return False
 
-    def delete(self, region="", vm_id=""):
+    def delete(self, vm_id="", region=""):
         if not region:
             region = self.region
         res = requests.delete("%s/%s/servers/%s" % (base_url, region, vm_id),
@@ -198,7 +198,7 @@ class Client:
             return True
         return False
 
-    def delete_cluster(self, region="", vm_name=None):
+    def delete_cluster(self, vm_name=None, region=""):
         if not region:
             region = self.region
         self.get_region_servers(region)
@@ -206,7 +206,7 @@ class Client:
             if not vm_name and name.startswith(vm_name + "-"):
                 self.delete(region, self.all_servers[region][name]["id"])
 
-    def delete_list(self, region="", vm_list=None):
+    def delete_list(self, vm_list=None, region=""):
         if vm_list is None:
             vm_list = []
         if not region:
@@ -214,7 +214,7 @@ class Client:
         for vm in vm_list:
             self.delete(region, vm)
 
-    def power_off(self, region="", vm_id=""):
+    def power_off(self, vm_id="", region=""):
         if not region:
             region = self.region
         res = requests.post("%s/%s/servers/%s/power-off" % (base_url, region, vm_id),
@@ -223,7 +223,7 @@ class Client:
             return True
         return False
 
-    def power_off_cluster(self, region="", vm_name=None):
+    def power_off_cluster(self, vm_name=None, region=""):
         if not region:
             region = self.region
         self.get_region_servers(region)
@@ -231,15 +231,17 @@ class Client:
             if not vm_name and name.startswith(vm_name + "-"):
                 self.power_off(region, self.all_servers[region][name]["id"])
 
-    def power_off_list(self, region="", vm_list=None):
+    def power_off_list(self, vm_list=None, region=""):
+        result = True
         if vm_list is None:
-            vm_list = []
+            return False
         if not region:
             region = self.region
         for vm in vm_list:
-            self.power_off(region, vm)
+            result *= self.power_off(region, vm)
+        result
 
-    def power_on(self, region="", vm_id=""):
+    def power_on(self, vm_id="", region=""):
         if not region:
             region = self.region
         res = requests.post("%s/%s/servers/%s/power-on" % (base_url, region, vm_id),
@@ -248,21 +250,22 @@ class Client:
             return True
         return False
 
-    def power_on_all(self, region="", vm_name=None):
+    def power_on_cluster(self, vm_name=None, region=""):
+        result = True
         if not region:
             region = self.region
         self.get_region_servers(region)
         for name in self.all_servers[region]:
             if not vm_name and name.startswith(vm_name + "-"):
-                self.power_on(region, self.all_servers[region][name]["id"])
+                result *= self.power_on(region, self.all_servers[region][name]["id"])
+        return result
 
-    def power_on_list(self, region="", vm_list=None):
+    def power_on_list(self, vm_list=None, region=""):
+        result = True
         if vm_list is None:
-            vm_list = []
+            return False
         if not region:
             region = self.region
         for vm in vm_list:
-            self.power_on(region, vm)
-
-
-
+            result *= self.power_on(region, vm)
+        return result
