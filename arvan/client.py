@@ -23,7 +23,7 @@ def api_key_validator(api_key, region="ir-thr-at1"):
 
 
 class Client:
-    def __init__(self, api_key, region="ir-thr-at1"):
+    def __init__(self, api_key, region="ir-thr-at1", printing=True):
         api_key_validator(api_key, region)
         self.api_key = api_key
         self.region = region
@@ -40,9 +40,10 @@ class Client:
         self.get_region_ssh_keys()
         self.all_servers = {}
 
-        for i in [self.region, self.all_images, self.all_networks, self.all_sizes, self.all_security_group,
-                  self.all_ssh_keys, self.all_servers]:
-            print(i)
+        if printing:
+            for i in [self.region, self.all_images, self.all_networks, self.all_sizes, self.all_security_group,
+                      self.all_ssh_keys, self.all_servers]:
+                print(i)
 
     def set_default_region(self, region):
         api_key_validator(self.api_key, region)
@@ -72,7 +73,9 @@ class Client:
             for n in json.loads(res.content)['data']:
                 result[n["name"]] = {}
                 result[n["name"]]["id"] = n["id"]
-                result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
+                result[n["name"]]["addr"] = []
+                if "public1" in n["addresses"]:
+                    result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
                 result[n["name"]]["status"] = n["status"]
                 result[n["name"]]["plan"] = {"id": n["flavor"]["id"], "disk": n["flavor"]["disk"],
                                              "memory": n["flavor"]["ram"], "cpu": n["flavor"]["vcpus"]}
@@ -189,7 +192,9 @@ class Client:
         else:
             return False
 
-    def delete(self, vm_id="", region=""):
+    def delete(self, vm_id, region=""):
+        if not vm_id:
+            return False
         if not region:
             region = self.region
         res = requests.delete("%s/%s/servers/%s" % (base_url, region, vm_id),
@@ -218,7 +223,9 @@ class Client:
             result *= self.delete(vm, region)
         return result
 
-    def power_off(self, vm_id="", region=""):
+    def power_off(self, vm_id, region=""):
+        if not vm_id:
+            return False
         if not region:
             region = self.region
         res = requests.post("%s/%s/servers/%s/power-off" % (base_url, region, vm_id),
@@ -245,7 +252,9 @@ class Client:
             result *= self.power_off(vm, region)
         return result
 
-    def power_on(self, vm_id="", region=""):
+    def power_on(self, vm_id, region=""):
+        if not vm_id:
+            return False
         if not region:
             region = self.region
         res = requests.post("%s/%s/servers/%s/power-on" % (base_url, region, vm_id),
