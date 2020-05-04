@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="arvan",  # Replace with your own username
-    version="0.0.8",
+    version="0.0.9",
     author="silkenpy",
     author_email="silkenpy@gmail.com",
     description="Arvan is python api to work with arvancloud",

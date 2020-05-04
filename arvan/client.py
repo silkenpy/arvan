@@ -73,7 +73,7 @@ class Client:
             for n in json.loads(res.content)['data']:
                 result[n["name"]] = {}
                 result[n["name"]]["id"] = n["id"]
-                result[n["name"]]["addr"] = []
+                result[n["name"]]["addr"] = ""
                 if "public1" in n["addresses"]:
                     result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
                 result[n["name"]]["status"] = n["status"]
@@ -280,3 +280,18 @@ class Client:
         for vm in vm_list:
             result *= self.power_on(vm, region)
         return result
+
+    def get_cluster_servers(self, vm_name, region=""):
+        result = {}
+        if not region:
+            region = self.region
+        for name in self.all_servers[region]:
+            if name.startswith(vm_name + "-"):
+                result[name] = self.all_servers[region][name]
+        return result
+
+    def get_list_of(self, variable_name, region="", node=""):
+        if not region:
+            region = self.region
+        return list(filter(lambda x: x, [self.all_servers[region][vm][variable_name] if (node in vm) else None for vm in
+                                         self.all_servers[region]]))
