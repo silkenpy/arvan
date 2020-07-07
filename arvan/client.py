@@ -295,3 +295,30 @@ class Client:
             region = self.region
         return list(filter(lambda x: x, [self.all_servers[region][vm][variable_name] if (node in vm) else None for vm in
                                          self.all_servers[region]]))
+
+    def resize(self, vm_id, flavor, region=""):
+        if not vm_id:
+            return False
+        if not region:
+            region = self.region
+
+        res = requests.post("%s/%s/servers/%s/resize" % (base_url, region, vm_id),
+                            headers={"Authorization": "Apikey %s" % self.api_key, 'Connection': 'keep-alive',
+                                     'Accept': '*/*', 'Accept-Language': 'fa', 'content-encoding': 'gzip',
+                                     'Content-Type': 'application/json;charset=utf-8'},
+                            data=json.dumps({"flavor_id": flavor}))
+        print(res.status_code)
+        print(res.content)
+        if res.status_code == 202:
+            return True
+        return False
+
+    def resize_cluster_of(self, vm_name, flavor, region=""):
+        result = True
+        if not region:
+            region = self.region
+        self.get_region_servers(region)
+        for name in self.all_servers[region]:
+            if name.startswith(vm_name + "-"):
+                result *= self.resize(self.all_servers[region][name]["id"], flavor, region)
+        return result
