@@ -13,7 +13,10 @@ def api_key_validator(api_key, region="ir-thr-at1"):
         key = api_key.split(" ")[1]
     else:
         return False
-    res = requests.get("%s/%s/servers" % (base_url, region), headers={"Authorization": "Apikey %s" % key})
+    res = requests.get(
+        "%s/%s/servers" % (base_url, region),
+        headers={"Authorization": "Apikey %s" % key},
+    )
     if res.status_code == 200:
         return True
     else:
@@ -41,8 +44,15 @@ class Client:
         self.all_servers = {}
 
         if printing:
-            for i in [self.region, self.all_images, self.all_networks, self.all_sizes, self.all_security_group,
-                      self.all_ssh_keys, self.all_servers]:
+            for i in [
+                self.region,
+                self.all_images,
+                self.all_networks,
+                self.all_sizes,
+                self.all_security_group,
+                self.all_ssh_keys,
+                self.all_servers,
+            ]:
                 print(i)
 
     def set_default_region(self, region):
@@ -67,18 +77,25 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.get("%s/%s/servers" % (base_url, region), headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.get(
+            "%s/%s/servers" % (base_url, region),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             result = {}
-            for n in json.loads(res.content)['data']:
+            for n in json.loads(res.content)["data"]:
                 result[n["name"]] = {}
                 result[n["name"]]["id"] = n["id"]
                 result[n["name"]]["addr"] = ""
                 if "public1" in n["addresses"]:
                     result[n["name"]]["addr"] = n["addresses"]["public1"][0]["addr"]
                 result[n["name"]]["status"] = n["status"]
-                result[n["name"]]["plan"] = {"id": n["flavor"]["id"], "disk": n["flavor"]["disk"],
-                                             "memory": n["flavor"]["ram"], "cpu": n["flavor"]["vcpus"]}
+                result[n["name"]]["plan"] = {
+                    "id": n["flavor"]["id"],
+                    "disk": n["flavor"]["disk"],
+                    "memory": n["flavor"]["ram"],
+                    "cpu": n["flavor"]["vcpus"],
+                }
 
             self.all_servers[region] = result
             return self.all_servers[region]
@@ -89,11 +106,13 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.get("%s/%s/images?type=%s" % (base_url, region, img_type),
-                           headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.get(
+            "%s/%s/images?type=%s" % (base_url, region, img_type),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             result = {}
-            for n in json.loads(res.content)['data']:
+            for n in json.loads(res.content)["data"]:
                 result[n["name"]] = {}
                 for img in n["images"]:
                     version = img["name"]
@@ -107,11 +126,13 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.get("%s/%s/networks" % (base_url, region),
-                           headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.get(
+            "%s/%s/networks" % (base_url, region),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             result = []
-            for n in json.loads(res.content)['data']:
+            for n in json.loads(res.content)["data"]:
                 result.append(n["id"])
             self.all_networks[region] = result
             return self.all_networks
@@ -122,12 +143,19 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.get("%s/%s/sizes" % (base_url, region), headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.get(
+            "%s/%s/sizes" % (base_url, region),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             result = {}
-            for plan in json.loads(res.content)['data']:
-                result[plan["name"]] = {"order": plan["order"], "memory": plan["memory"], "cpu": plan["cpu_count"],
-                                        "disk": plan["disk"]}
+            for plan in json.loads(res.content)["data"]:
+                result[plan["name"]] = {
+                    "order": plan["order"],
+                    "memory": plan["memory"],
+                    "cpu": plan["cpu_count"],
+                    "disk": plan["disk"],
+                }
             self.all_sizes[region] = result
             return self.all_sizes
         else:
@@ -137,11 +165,13 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.get("%s/%s/securities" % (base_url, region),
-                           headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.get(
+            "%s/%s/securities" % (base_url, region),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             result = {}
-            for n in json.loads(res.content)['data']:
+            for n in json.loads(res.content)["data"]:
                 result[n["name"]] = n["id"]
             self.all_security_group[region] = result
             return self.all_security_group
@@ -152,41 +182,67 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.get("%s/%s/ssh-keys" % (base_url, region), headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.get(
+            "%s/%s/ssh-keys" % (base_url, region),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             result = []
-            for n in json.loads(res.content)['data']:
+            for n in json.loads(res.content)["data"]:
                 result.append(n["name"])
             self.all_ssh_keys[region] = result
             return self.all_ssh_keys
         else:
             raise Exception
 
-    def create(self, name="", region="", image="", network="", flavor="", ssh_key=True, ssh_key_name=0,
-               security_group="", count=1):
+    def create(
+        self,
+        name="",
+        region="",
+        image="",
+        network="",
+        flavor="",
+        ssh_key=True,
+        ssh_key_name=0,
+        security_group="",
+        count=1,
+    ):
         if not name:
             name = str(int(time()))
         if not region:
             region = self.region
         if not image:
-            image = self.all_images[region]['ubuntu']['18.04']
+            image = self.all_images[region]["ubuntu"]["18.04"]
         if not network:
             network = self.all_networks[region][0]
         if not flavor:
-            flavor = self.all_sizes[region]['standard1']['order']
+            flavor = self.all_sizes[region]["standard1"]["order"]
         if not security_group:
-            security_group = self.all_security_group[region]['default']
+            security_group = self.all_security_group[region]["default"]
 
-        res = requests.post("%s/%s/servers" % (base_url, region),
-                            headers={"Authorization": "Apikey %s" % self.api_key, 'Connection': 'keep-alive',
-                                     'Accept': '*/*', 'Accept-Language': 'fa', 'content-encoding': 'gzip',
-                                     'Content-Type': 'application/json;charset=utf-8'
-                                     },
-                            data=json.dumps(
-                                {"image_id": image, "flavor_id": flavor, "name": name, "key_name": ssh_key_name,
-                                 "network_id": network, "security_groups": [{"name": security_group}],
-                                 "ssh_key": ssh_key, "count": count}),
-                            )
+        res = requests.post(
+            "%s/%s/servers" % (base_url, region),
+            headers={
+                "Authorization": "Apikey %s" % self.api_key,
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+                "Accept-Language": "fa",
+                "content-encoding": "gzip",
+                "Content-Type": "application/json;charset=utf-8",
+            },
+            data=json.dumps(
+                {
+                    "image_id": image,
+                    "flavor_id": flavor,
+                    "name": name,
+                    "key_name": ssh_key_name,
+                    "network_id": network,
+                    "security_groups": [{"name": security_group}],
+                    "ssh_key": ssh_key,
+                    "count": count,
+                }
+            ),
+        )
         if res.status_code == 201:
             return True
         else:
@@ -197,8 +253,10 @@ class Client:
             return False
         if not region:
             region = self.region
-        res = requests.delete("%s/%s/servers/%s" % (base_url, region, vm_id),
-                              headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.delete(
+            "%s/%s/servers/%s" % (base_url, region, vm_id),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 200:
             return True
         return False
@@ -228,8 +286,10 @@ class Client:
             return False
         if not region:
             region = self.region
-        res = requests.post("%s/%s/servers/%s/power-off" % (base_url, region, vm_id),
-                            headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.post(
+            "%s/%s/servers/%s/power-off" % (base_url, region, vm_id),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 202:
             return True
         return False
@@ -257,8 +317,10 @@ class Client:
             return False
         if not region:
             region = self.region
-        res = requests.post("%s/%s/servers/%s/power-on" % (base_url, region, vm_id),
-                            headers={"Authorization": "Apikey %s" % self.api_key})
+        res = requests.post(
+            "%s/%s/servers/%s/power-on" % (base_url, region, vm_id),
+            headers={"Authorization": "Apikey %s" % self.api_key},
+        )
         if res.status_code == 202:
             return True
         return False
@@ -285,6 +347,7 @@ class Client:
         result = {}
         if not region:
             region = self.region
+        self.get_region_servers(region)
         for name in self.all_servers[region]:
             if name.startswith(vm_name + "-"):
                 result[name] = self.all_servers[region][name]
@@ -293,8 +356,18 @@ class Client:
     def get_list_of(self, variable_name, region="", node=""):
         if not region:
             region = self.region
-        return list(filter(lambda x: x, [self.all_servers[region][vm][variable_name] if (node in vm) else None for vm in
-                                         self.all_servers[region]]))
+        self.get_region_servers(region)
+        return list(
+            filter(
+                lambda x: x,
+                [
+                    self.all_servers[region][vm][variable_name]
+                    if (node in vm)
+                    else None
+                    for vm in self.all_servers[region]
+                ],
+            )
+        )
 
     def resize(self, vm_id, flavor, region=""):
         if not vm_id:
@@ -302,11 +375,18 @@ class Client:
         if not region:
             region = self.region
 
-        res = requests.post("%s/%s/servers/%s/resize" % (base_url, region, vm_id),
-                            headers={"Authorization": "Apikey %s" % self.api_key, 'Connection': 'keep-alive',
-                                     'Accept': '*/*', 'Accept-Language': 'fa', 'content-encoding': 'gzip',
-                                     'Content-Type': 'application/json;charset=utf-8'},
-                            data=json.dumps({"flavor_id": flavor}))
+        res = requests.post(
+            "%s/%s/servers/%s/resize" % (base_url, region, vm_id),
+            headers={
+                "Authorization": "Apikey %s" % self.api_key,
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+                "Accept-Language": "fa",
+                "content-encoding": "gzip",
+                "Content-Type": "application/json;charset=utf-8",
+            },
+            data=json.dumps({"flavor_id": flavor}),
+        )
         print(res.status_code)
         print(res.content)
         if res.status_code == 202:
@@ -320,5 +400,7 @@ class Client:
         self.get_region_servers(region)
         for name in self.all_servers[region]:
             if name.startswith(vm_name + "-"):
-                result *= self.resize(self.all_servers[region][name]["id"], flavor, region)
+                result *= self.resize(
+                    self.all_servers[region][name]["id"], flavor, region
+                )
         return result
